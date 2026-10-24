@@ -1,0 +1,254 @@
+/* ============================================
+   FONTS — Geist + TT Norms Pro
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Grandstander:wght@900&display=swap');
+
+@font-face {
+  font-family: 'TT Norms Pro';
+  src: url('/fonts/tt-norms-pro-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Norms Pro';
+  src: url('/fonts/tt-norms-pro-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================
+   GLOBAL RESET & BASE STYLES — LivePoll
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
+  --bg-hover: #2a2a2a;
+  --accent: #6c63ff;
+  --accent-light: #8b85ff;
+  --accent-dark: #5a52e0;
+  --accent-glow: rgba(108, 99, 255, 0.25);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #606060;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(108, 99, 255, 0.4);
+  --success: #22c55e;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(108, 99, 255, 0.15);
+  --transition: 0.2s ease;
+  --transition-slow: 0.4s ease;
+  --font: 'Geist', 'TT Norms Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html, body {
+  font-family: var(--font);
+}
+
+* {
+  font-family: inherit;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+.bg-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: -1;
+  display: block;
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .bg-video {
+    object-position: 70% center;
+  }
+}
+
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, textarea {
+  font-family: var(--font);
+}
+
+.main-content {
+  padding-top: 72px;
+  min-height: 100vh;
+}
+
+/* ============================================
+   SHARED UTILITY STATES
+   ============================================ */
+
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.error-state {
+  color: var(--error);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   SPINNER
+   ============================================ */
+
+.spinner,
+.btn-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   LIQUID GLASS
+   ============================================ */
+
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.45) 0%,
+    rgba(255,255,255,0.15) 20%,
+    rgba(255,255,255,0)    40%,
+    rgba(255,255,255,0)    60%,
+    rgba(255,255,255,0.15) 80%,
+    rgba(255,255,255,0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   WORD REVEAL ANIMATION
+   ============================================ */
+
+@keyframes wordReveal {
+  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+.word-reveal {
+  display: inline-block;
+  opacity: 0;
+  animation: wordReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+::selection {
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
