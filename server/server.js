@@ -28,36 +28,36 @@ const io = new Server(httpServer, {
 app.use(cors({ origin: isProduction ? false : ['http://localhost:5173', 'http://localhost:3000'] }));
 app.use(express.json());
 
-// REST Routes
+
 app.use('/api/polls', pollRoutes);
 
-// Serve React production build
+
 if (isProduction) {
-  const buildPath = path.join(__dirname, '../client/build');
+  const buildPath = path.join(__dirname, '../client/dist');
   app.use(express.static(buildPath));
 
-  // Catch-all: serve index.html for any non-API route (SPA support)
+
   app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 } else {
-  // Dev health check
+  
   app.get('/', (req, res) => {
     res.json({ status: 'LivePoll server is running 🚀' });
   });
 }
 
-// Socket.io events
+
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
-  // Join a poll room
+
   socket.on('joinPoll', (pollId) => {
     socket.join(pollId);
     console.log(`Socket ${socket.id} joined room: ${pollId}`);
   });
 
-  // Handle vote submission via socket
+
   socket.on('submitVote', async ({ pollId, optionIndex }) => {
     try {
       const poll = await Poll.findById(pollId);
@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
       poll.totalVotes += 1;
       await poll.save();
 
-      // Broadcast updated poll to all clients in the room
+      
       io.to(pollId).emit('pollUpdated', poll);
     } catch (err) {
       console.error('Vote error:', err.message);
