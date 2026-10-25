@@ -45,11 +45,21 @@ function CreatePage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/polls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: trimmedQuestion, options: validOptions }),
-      });
+      
+const response = await fetch(
+  'https://realtime-poll-cast.onrender.com/api/polls',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      question,
+      options,
+    }),
+  }
+);
+
 
       if (!res.ok) {
         const data = await res.json();
