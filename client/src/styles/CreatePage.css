@@ -7,7 +7,22 @@
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  padding: 48px 20px 80px 48px;
+  padding: 100px 20px 80px 48px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .create-container {
+    padding: 96px 16px 60px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-container {
+    padding: 92px 12px 48px;
+    justify-content: center;
+  }
 }
 
 .create-wrapper {
