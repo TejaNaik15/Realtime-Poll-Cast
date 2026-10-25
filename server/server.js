@@ -19,6 +19,7 @@ connectDB();
 // Configure your Vercel frontend URL in Render's environment variables.
 // Example: FRONTEND_URL=https://your-project.vercel.app
 const allowedOrigins = [
+  'https://realtime-poll-cast.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
   ...(process.env.FRONTEND_URL
