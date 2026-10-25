@@ -46,7 +46,7 @@ function CreatePage() {
     setSubmitting(true);
     try {
       
-const response = await fetch(
+const res= await fetch(
   'https://realtime-poll-cast.onrender.com/api/polls',
   {
     method: 'POST',
