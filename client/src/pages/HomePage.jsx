@@ -35,7 +35,7 @@ function HomePage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/polls');
+      const res = await fetch('https://realtime-poll-cast.onrender.com/api/polls');
       if (!res.ok) throw new Error('Failed to fetch polls');
       const data = await res.json();
       setPolls(data);
