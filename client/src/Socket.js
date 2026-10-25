@@ -1,6 +1,7 @@
+
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000', {
+const socket = io('https://realtime-poll-cast.onrender.com', {
   autoConnect: true,
   reconnection: true,
   reconnectionAttempts: 5,
