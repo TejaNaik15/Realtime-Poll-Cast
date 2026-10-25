@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import CreatePage from './pages/CreatePage';
 import PollPage from './pages/PollPage';
 import './styles/index.css';
+import './mobile.css';
 
 function App() {
   return (

@@ -1,0 +1,197 @@
+
+/* LivePoll - Mobile responsiveness */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  max-width: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a,
+input[type="submit"] {
+  touch-action: manipulation;
+}
+
+button,
+input[type="submit"],
+.btn,
+.nav-link,
+.option-btn,
+.back-btn {
+  min-height: 44px;
+}
+
+.hero,
+.hero-content,
+.polls-section,
+.polls-grid,
+.create-page,
+.create-container,
+.poll-page,
+.poll-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hero h1,
+.hero p,
+.poll-container h1,
+.create-container h1,
+.poll-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 8vw, 5rem);
+}
+
+.hero p {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  line-height: 1.6;
+}
+
+.cta-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.polls-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+
+.poll-card,
+.poll-container,
+.create-container {
+  overflow-wrap: anywhere;
+}
+
+.form-group input,
+.form-group textarea,
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: 100svh;
+    padding: 5rem 1rem 2rem;
+  }
+
+  .hero-content {
+    width: 100%;
+    padding: 0;
+  }
+
+  .polls-section {
+    padding: 2rem 1rem;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .create-page,
+  .poll-page {
+    min-height: 100svh;
+    padding: 5rem 1rem 2rem;
+    align-items: flex-start;
+  }
+
+  .create-container,
+  .poll-container {
+    width: 100%;
+    padding: 1.5rem 1rem;
+  }
+
+  .poll-meta,
+  .poll-stats {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
+  .cta-buttons .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .option-input-group {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-links {
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .poll-card {
+    padding: 1rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
