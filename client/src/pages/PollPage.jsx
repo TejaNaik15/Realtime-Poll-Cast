@@ -15,7 +15,7 @@ function PollPage() {
 
   // Check localStorage for prior vote
   useEffect(() => {
-    const storedVote = localStorage.getItem(`livepoll_voted_${id}`);
+    const storedVote = localStorage.getItem(`livepoll_voted_${id}`)
     if (storedVote !== null) {
       setVoted(true);
       setVotedIndex(parseInt(storedVote, 10));
@@ -26,7 +26,7 @@ function PollPage() {
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const res = await fetch(`/api/polls/${id}`);
+        const res = await fetch(`https://realtime-poll-cast.onrender.com/api/polls/${id}`);
         if (!res.ok) throw new Error('Poll not found');
         const data = await res.json();
         setPoll(data);
