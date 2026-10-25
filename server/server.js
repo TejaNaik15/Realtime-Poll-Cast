@@ -16,31 +16,36 @@ const httpServer = http.createServer(app);
 // Connect to MongoDB
 connectDB();
 
-// Configure your Vercel frontend URL in Render's environment variables.
-// Example: FRONTEND_URL=https://your-project.vercel.app
+// Normalize URLs by removing spaces and trailing slashes
+const normalizeOrigin = (url) => url.trim().replace(/\/+$/, '');
+
+// Allowed frontend URLs
 const allowedOrigins = [
   'https://realtime-poll-cast.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
   ...(process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+    ? process.env.FRONTEND_URL.split(',').map(normalizeOrigin)
     : []),
-];
+].filter(Boolean);
 
-// CORS configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests without an Origin header, such as server-to-server requests.
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+console.log('Allowed frontend origins:', allowedOrigins);
 
-      return callback(new Error('Not allowed by CORS'));
-    },
-  })
-);
+// CORS configuration for REST API
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
+      return callback(null, true);
+    }
 
+    console.error('CORS blocked origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Health check
@@ -54,7 +59,14 @@ app.use('/api/polls', pollRoutes);
 // Socket.IO configuration
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
+        return callback(null, true);
+      }
+
+      console.error('Socket.IO CORS blocked origin:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
   },
 });
@@ -74,7 +86,11 @@ io.on('connection', (socket) => {
   // Submit a vote
   socket.on('submitVote', async ({ pollId, optionIndex } = {}) => {
     try {
-      if (!pollId || !Number.isInteger(optionIndex) || optionIndex < 0) {
+      if (
+        !pollId ||
+        !Number.isInteger(optionIndex) ||
+        optionIndex < 0
+      ) {
         return;
       }
 
@@ -105,5 +121,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 LivePoll server is running on port ${PORT}`);
+  console.log(`LivePoll server is running on port ${PORT}`);
 });
