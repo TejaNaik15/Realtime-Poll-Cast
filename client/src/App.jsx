@@ -10,18 +10,23 @@ import './mobile.css';
 function App() {
   return (
     <BrowserRouter>
-      <video
-        className="bg-video"
-        muted
-        autoPlay
-        playsInline
-        loop
-        preload="auto"
-        disablePictureInPicture
-        tabIndex={-1}
-        aria-hidden="true"
-        src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/cloudinarry%20to%20cloudflare/202606021731-e_hqa6sn.mp4"
-      />
+      
+{/* Global Background Video */}
+<video
+  className="bg-video"
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto"
+  poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"
+>
+  <source
+    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4"
+    type="video/mp4"
+  />
+</video>
+
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
