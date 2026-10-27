@@ -1,182 +1,357 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import socket from '../socket';
-import '../styles/PollPage.css';
+
+const API_URL = 'https://realtime-poll-cast.onrender.com';
 
 function PollPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [poll, setPoll] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [voted, setVoted] = useState(false);
-  const [votedIndex, setVotedIndex] = useState(null);
+  const [error, setError] = useState('');
+  const [selectedOption, setSelectedOption] = useState(null);
   const [voting, setVoting] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [voteMessage, setVoteMessage] = useState('');
 
-  // Check localStorage for prior vote
-  useEffect(() => {
-    const storedVote = localStorage.getItem(`livepoll_voted_${id}`)
-    if (storedVote !== null) {
-      setVoted(true);
-      setVotedIndex(parseInt(storedVote, 10));
+  // Fetch the poll from the backend
+  const fetchPoll = useCallback(async () => {
+    if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
+      setError('Invalid poll ID. Please open a valid poll.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch(
+        `${API_URL}/api/polls/${encodeURIComponent(id)}`
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            (response.status === 404
+              ? 'This poll was not found. It may have been deleted.'
+              : `Unable to load poll (HTTP ${response.status}).`)
+        );
+      }
+
+      // Supports either a direct poll object or { poll: ... }
+      const pollData = data?.poll ?? data;
+
+      if (!pollData || !pollData._id) {
+        throw new Error('The server returned invalid poll data.');
+      }
+
+      setPoll(pollData);
+    } catch (err) {
+      console.error('Error fetching poll:', err);
+      setError(
+        err.message ||
+          'Unable to load this poll. Please check your connection and try again.'
+      );
+    } finally {
+      setLoading(false);
     }
   }, [id]);
 
-  // Fetch poll data
+  // Load the poll and restore the local vote status
   useEffect(() => {
-    const fetchPoll = async () => {
+    let active = true;
+
+    const loadPoll = async () => {
+      setLoading(true);
+      setError('');
+
+      if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
+        if (active) {
+          setError('Invalid poll ID. Please open a valid poll.');
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        const res = await fetch(`https://realtime-poll-cast.onrender.com/api/polls/${id}`);
-        if (!res.ok) throw new Error('Poll not found');
-        const data = await res.json();
-        setPoll(data);
+        const response = await fetch(
+          `${API_URL}/api/polls/${encodeURIComponent(id)}`
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              data?.error ||
+              (response.status === 404
+                ? 'This poll was not found. It may have been deleted.'
+                : `Unable to load poll (HTTP ${response.status}).`)
+          );
+        }
+
+        const pollData = data?.poll ?? data;
+
+        if (!pollData || !pollData._id) {
+          throw new Error('The server returned invalid poll data.');
+        }
+
+        if (active) {
+          setPoll(pollData);
+
+          const votedPolls = JSON.parse(
+            localStorage.getItem('votedPolls') || '{}'
+          );
+
+          setHasVoted(Boolean(votedPolls[id]));
+        }
       } catch (err) {
-        setError(err.message);
+        console.error('Error loading poll:', err);
+
+        if (active) {
+          setError(
+            err.message ||
+              'Unable to load this poll. Please try again.'
+          );
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
-    fetchPoll();
-  }, [id]);
 
-  // Socket.io: join room and listen for updates
-  useEffect(() => {
-    socket.emit('joinPoll', id);
-
-    socket.on('pollUpdated', (updatedPoll) => {
-      setPoll(updatedPoll);
-    });
+    loadPoll();
 
     return () => {
-      socket.off('pollUpdated');
+      active = false;
     };
   }, [id]);
 
-  const handleVote = async (optionIndex) => {
-    if (voted || voting) return;
+  // Join the poll's Socket.IO room and receive live updates
+  useEffect(() => {
+    if (!id) return;
+
+    const handlePollUpdate = (updatedPoll) => {
+      if (
+        updatedPoll &&
+        String(updatedPoll._id) === String(id)
+      ) {
+        setPoll(updatedPoll);
+      }
+    };
+
+    socket.emit('joinPoll', id);
+    socket.on('pollUpdated', handlePollUpdate);
+
+    return () => {
+      socket.off('pollUpdated', handlePollUpdate);
+    };
+  }, [id]);
+
+  // Submit a vote through Socket.IO
+  const handleVote = () => {
+    if (selectedOption === null || voting || hasVoted) {
+      return;
+    }
+
+    if (!poll || !Array.isArray(poll.options)) {
+      setVoteMessage('Poll data is unavailable. Please refresh.');
+      return;
+    }
+
+    if (
+      !Number.isInteger(selectedOption) ||
+      selectedOption < 0 ||
+      selectedOption >= poll.options.length
+    ) {
+      setVoteMessage('Please select a valid option.');
+      return;
+    }
 
     setVoting(true);
-    try {
-      socket.emit('submitVote', { pollId: id, optionIndex });
-      localStorage.setItem(`livepoll_voted_${id}`, optionIndex);
-      setVoted(true);
-      setVotedIndex(optionIndex);
-    } catch (err) {
-      console.error('Vote failed:', err);
-    } finally {
-      setVoting(false);
-    }
-  };
+    setVoteMessage('');
 
-  const getPercentage = (votes) => {
-    if (!poll || poll.totalVotes === 0) return 0;
-    return Math.round((votes / poll.totalVotes) * 100);
+    // The server broadcasts pollUpdated after successfully saving.
+    // This timeout only prevents the UI from staying stuck forever.
+    const timeoutId = setTimeout(() => {
+      setVoting(false);
+      setVoteMessage(
+        'No confirmation received from the server. Please check the poll before trying again.'
+      );
+    }, 10000);
+
+    socket.emit('submitVote', {
+      pollId: id,
+      optionIndex: selectedOption,
+    });
+
+    // This matches the existing server event structure, which has
+    // no explicit vote acknowledgement.
+    const handleVoteUpdate = (updatedPoll) => {
+      if (
+        updatedPoll &&
+        String(updatedPoll._id) === String(id)
+      ) {
+        clearTimeout(timeoutId);
+        setPoll(updatedPoll);
+        setVoting(false);
+        setHasVoted(true);
+        setVoteMessage('Your vote has been submitted!');
+
+        try {
+          const votedPolls = JSON.parse(
+            localStorage.getItem('votedPolls') || '{}'
+          );
+
+          votedPolls[id] = true;
+          localStorage.setItem(
+            'votedPolls',
+            JSON.stringify(votedPolls)
+          );
+        } catch (err) {
+          console.error('Unable to save local vote status:', err);
+        }
+
+        socket.off('pollUpdated', handleVoteUpdate);
+      }
+    };
+
+    socket.on('pollUpdated', handleVoteUpdate);
   };
 
   if (loading) {
     return (
-      <div className="poll-page-container">
-        <div className="loading-state">
-          <div className="spinner"></div>
+      <main className="poll-page">
+        <div className="poll-container">
           <p>Loading poll...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  if (error) {
+  if (error || !poll) {
     return (
-      <div className="poll-page-container">
-        <div className="error-state">
-          <span>⚠️</span>
-          <p>{error}</p>
-          <button className="back-btn" onClick={() => navigate('/')}>
-            ← Back to Home
+      <main className="poll-page">
+        <div className="poll-container">
+          <h2>Unable to load poll</h2>
+          <p role="alert">
+            {error || 'Poll data is unavailable.'}
+          </p>
+
+          <button type="button" onClick={fetchPoll}>
+            Try Again
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+          >
+            Back to Home
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
+  const totalVotes = poll.options.reduce(
+    (total, option) => total + (Number(option.votes) || 0),
+    0
+  );
+
   return (
-    <div className="poll-page-container">
-      <div className="poll-wrapper">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          ← Back
+    <main className="poll-page">
+      <div className="poll-container">
+        <button
+          type="button"
+          className="back-button"
+          onClick={() => navigate('/')}
+        >
+          ← Back to Polls
         </button>
 
-        <div className="poll-header">
-          <div className="poll-live-badge">
-            <span className="live-dot"></span>
-            LIVE
-          </div>
-          <h1 className="poll-question">{poll.question}</h1>
-          <p className="poll-total-votes">
-            {poll.totalVotes} {poll.totalVotes === 1 ? 'vote' : 'votes'} cast
-          </p>
-        </div>
+        <h1>{poll.question}</h1>
+
+        <p className="poll-total-votes">
+          {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+        </p>
 
         <div className="poll-options">
           {poll.options.map((option, index) => {
-            const pct = getPercentage(option.votes);
-            const isVotedOption = voted && votedIndex === index;
-            const isWinning =
-              voted &&
-              poll.totalVotes > 0 &&
-              option.votes === Math.max(...poll.options.map((o) => o.votes));
+            const votes = Number(option.votes) || 0;
+            const percentage =
+              totalVotes > 0
+                ? Math.round((votes / totalVotes) * 100)
+                : 0;
 
             return (
-              <div
-                key={index}
-                className={`option-card ${voted ? 'voted' : 'clickable'} ${isVotedOption ? 'my-vote' : ''} ${isWinning && voted ? 'winning' : ''}`}
-                onClick={() => handleVote(index)}
-                role={!voted ? 'button' : undefined}
-                tabIndex={!voted ? 0 : undefined}
-                onKeyDown={(e) => !voted && e.key === 'Enter' && handleVote(index)}
-                aria-label={`Vote for ${option.text}`}
+              <button
+                key={`${index}-${option.text}`}
+                type="button"
+                className={`poll-option ${
+                  selectedOption === index ? 'selected' : ''
+                }`}
+                onClick={() => {
+                  if (!hasVoted && !voting) {
+                    setSelectedOption(index);
+                    setVoteMessage('');
+                  }
+                }}
+                disabled={hasVoted || voting}
+                aria-pressed={selectedOption === index}
               >
-                <div className="option-content">
-                  <div className="option-top-row">
-                    <span className="option-text">
-                      {isVotedOption && '✓ '}
-                      {option.text}
-                    </span>
-                    {voted && (
-                      <span className="option-pct">{pct}%</span>
-                    )}
-                  </div>
+                <div className="poll-option-header">
+                  <span>{option.text}</span>
 
-                  {voted && (
-                    <div className="progress-bar-track">
-                      <div
-                        className={`progress-bar-fill ${isWinning ? 'winning-bar' : ''}`}
-                        style={{ width: `${pct}%` }}
-                        aria-valuenow={pct}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      ></div>
-                    </div>
-                  )}
-
-                  {voted && (
-                    <span className="option-votes">
-                      {option.votes} {option.votes === 1 ? 'vote' : 'votes'}
+                  {(hasVoted || totalVotes > 0) && (
+                    <span>
+                      {votes} ({percentage}%)
                     </span>
                   )}
                 </div>
-              </div>
+
+                {(hasVoted || totalVotes > 0) && (
+                  <div className="poll-progress-track">
+                    <div
+                      className="poll-progress-fill"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {!voted && (
-          <p className="vote-prompt">👆 Click an option to cast your vote</p>
+        {!hasVoted ? (
+          <button
+            type="button"
+            className="vote-button"
+            onClick={handleVote}
+            disabled={selectedOption === null || voting}
+          >
+            {voting ? 'Submitting vote...' : 'Submit Vote'}
+          </button>
+        ) : (
+          <p className="vote-success">
+            You have already voted in this poll.
+          </p>
         )}
-        {voted && (
-          <p className="voted-notice">✅ Your vote has been recorded. Results update live!</p>
+
+        {voteMessage && (
+          <p role="status" aria-live="polite">
+            {voteMessage}
+          </p>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
